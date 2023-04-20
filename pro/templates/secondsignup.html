@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <form method="POST">
+
+        <input type="email" placeholder="Enter your email id" id="e-mail">
+        
+        <h1>Select your favorite colors</h1>
+        <input type="checkbox" name="color" value="red">Red<br>
+        <input type="checkbox" name="color" value="green">Green<br>
+        <input type="checkbox" name="color" value="blue">Blue<br>
+        <input type="checkbox" name="color" value="yellow">Yellow<br>
+        <br>
+        <button id="submitBtn">Submit</button>
+        <br>
+        <input type="text" id="colorInput">
+    </form>
+    <script>
+        $(document).ready(function() {
+          var selectedColors = [];
+    
+          $('input[type="checkbox"]').click(function() {
+            if ($(this).is(':checked')) {
+              selectedColors.push($(this).val());
+            } else {
+              var index = selectedColors.indexOf($(this).val());
+              if (index > -1) {
+                selectedColors.splice(index, 1);
+              }
+            }
+          });
+    
+          $('#submitBtn').click(function() {
+            $('#colorInput').val(selectedColors.join(", "));
+          });
+        });
+      </script>
+</body>
+</html>

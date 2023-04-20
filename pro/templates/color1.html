@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Register</h2>
+<form method="POST">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Register</button>
+</form>
+<div id="color-buttons">
+  <button id="red"></button>
+  <button id="green"></button>
+  <button id="blue"></button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const pattern = ['red', 'green', 'blue']; // the desired pattern
+let currentStep = 0; // the current step the user is on
+
+document.querySelectorAll('#color-buttons button').forEach(button => {
+  button.addEventListener('click', () => {
+    if (button.id === pattern[currentStep]) {
+      // correct color clicked
+      currentStep++;
+      if (currentStep === pattern.length) {
+        // correct pattern entered
+        document.querySelector('form').submit(); // submit the registration form
+        currentStep = 0;
+      }
+    } else {
+      // incorrect color clicked
+      alert('Authentication failed!');
+      currentStep = 0;
+    }
+  });
+});
+</script>
+{% endblock %}
