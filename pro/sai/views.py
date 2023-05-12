@@ -1,7 +1,7 @@
 
 from django.shortcuts import render,redirect
 from django.contrib.auth.models import User
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse
 from django.contrib.auth import authenticate,login as auth_login, logout as auth_logout
 from django.contrib import auth
 import re
@@ -12,9 +12,21 @@ from django.contrib.auth.backends import ModelBackend
 from django.contrib import messages
 from .models import CUser
 import hashlib
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
+from django.shortcuts import render, redirect
 from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.conf import settings
+import random
+import smtplib
+import ssl
+import string
+from django.contrib.auth.forms import PasswordResetForm
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.contrib.auth.tokens import default_token_generator
+
 
 
 
@@ -441,34 +453,50 @@ def signup(request):
         email = request.POST.get('email')
         createpassword = request.POST.get('createpassword')
         confirmpassword = request.POST.get('confirmpassword')
-        #if createpassword!=confirmpassword:
-           # return redirect('signup')
         username_regex = r'^[a-zA-Z0-9_-]{4,}$'
         password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*\W)[a-zA-Z\d\W]{8,}$'
         if User.objects.filter(email=email).exists():
-
-           # return redirect('signup')
             return render(request, 'signup.html', {'error_message': 'Invalid input'})
-
         username_valid = re.match(username_regex, username)
         password_valid = re.match(password_regex, createpassword)
-
-
         if username_valid and password_valid and createpassword == confirmpassword:
             user = User.objects.create_user(username=username, email=email, password=createpassword)
-
-            # salt = bcrypt.gensalt()
-            # encrypted_password = bcrypt.hashpw(createpassword.encode('utf-8'), salt).decode('utf-8')
             encrypted_password =encryption(int(replace_char(createpassword)))
+
             print(encrypted_password)
             user.password = encrypted_password
+            request.session['user_id'] = user.id
+            request.session['email'] = email
+            print(user.id)
             user.save()
-            return redirect('login')
+            return redirect('register1')
           
-          # my_user = User.objects.create_user(username,email,encrypted_password)
-          # my_user .save()
-          # return redirect('login')
     return render(request, 'signup.html') 
+
+
+
+def register1(request):
+    user_id = request.session.get('user_id')
+    if not user_id:
+        return redirect('signup')
+    user = User.objects.get(id=user_id)
+    print("user.id",user.id)
+    
+    if request.method == 'POST':
+       
+       pattern = request.POST.get('pattern')
+       if pattern.count(',') == 3:
+            hashed_colors = hashlib.sha256(pattern.encode()).hexdigest()
+            print(hashed_colors)
+            custom_user = CUser(user=user, pattern=hashed_colors)
+            custom_user.save() # Save the CustomUser instance
+            del request.session['user_id']
+
+            messages.success(request, 'Registration successful!')
+            return redirect('login')
+       else:
+            messages.error(request, 'Please select exactly 4 colors')
+    return render(request, 'register1.html')
 
 
 def login(request):
@@ -478,42 +506,22 @@ def login(request):
         decrypted_password = encryption(int(replace_char(password)))
         print(decrypted_password)
         # user = User.objects.filter(username=username, password=decrypted_password).first()
-        user = User.objects.filter(username=username, password=decrypted_password)
-            
+        user = User.objects.filter(username=username, password=decrypted_password).first()
+        if user:
+            # request.session['user'] = user
         
-        # if user:
-        #     request.session['user'] = user
-            # return HttpResponseRedirect(reverse('register1')) 
-        return redirect('register1')
-        
+            request.session['user_id'] = user.id
+            request.session['email'] = user.email
+            print(user.id)
+    
+            return redirect('login1')
+    
     return render(request,"login.html")
 
-#color authentication code starts:
-# @login_required
-# User = get_user_model()
-def register1(request):
-    
-    if request.method == 'POST':
-        user = request.user
-        print("user.id",user.id)
-        # CUser.user=User.objects.get(user=request.user)
-        pattern = request.POST.get('pattern')
-        if pattern.count(',') == 3:
-            hashed_colors = hashlib.sha256(pattern.encode()).hexdigest()
-            custom_user = CUser(user=user, pattern=hashed_colors)
-            custom_user.save() # Save the CustomUser instance
-            messages.success(request, 'Registration successful!')
-            return redirect('login1')
-        else:
-            messages.error(request, 'Please select exactly 4 colors')
-    return render(request, 'register1.html')
+
+
 # customuser.user=User.objects.get(user=request.user)
-
-
-
-
-
-
+# @login_required
 def login1(request):
     if request.method == 'POST':
         # Get the user's color pattern from the login form
@@ -521,24 +529,141 @@ def login1(request):
         
         # Hash the color pattern using the same algorithm as in the registration function
         hashed_colors = hashlib.sha256(colors.encode()).hexdigest()
-
+        print(hashed_colors)
         try:
-            # Look up the user based on their hashed color pattern
-            user = CUser.objects.get(pattern=hashed_colors)
+            # id=id+6
+            user_id = request.session.get('user_id')
+            user = CUser.objects.get(pattern=hashed_colors, user_id=user_id).user
+            # if(id==user_id):
+            #     print("false")
             
-            # If the user is found, log them in and redirect to the homepage
+            # If the user is found, log them in and redirect to home1
             auth_login(request, user)
+            # request.session['email'] = user.email
+           
             messages.success(request, 'Logged in successfully!')
-            return redirect('home1')
+            request.session['email'] = user.email
+            # del request.session['user_id']
+            return redirect('login_with_otp')
+        
+        # If the user is not found, show an error message
         except CUser.DoesNotExist:
-            # If the user is not found, show an error message
-            messages.error(request, 'Invalid color pattern or user does not exist.')
+            messages.error(request, 'Invalid credentials.')
     
     return render(request, 'login1.html')
 
 def logout(request):
     auth.logout(request)
     return redirect('login')
+# working on email otp
+
+def generate_otp():
+    digits = string.digits
+    otp = ''
+    for i in range(6):
+        otp += random.choice(digits)
+    return otp
+
+def send_otp(email, otp):
+    subject = 'Login OTP'
+    message = f'Your OTP for login is {otp}'
+    from_email = settings.EMAIL_HOST_USER
+    recipient_list = [email]
+
+    context = ssl.create_default_context()
+    with smtplib.SMTP_SSL(settings.EMAIL_HOST, settings.EMAIL_PORT, context=context) as server:
+        server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+        server.sendmail(from_email, recipient_list, message)
+
+def login_with_otp(request):
+    if request.method == 'POST':
+        email = request.session.get('email')
+        otp = request.POST.get('otp')
+        print(otp)
+        user = User.objects.filter(email=email).first()
+        print("sucess")
+        if user:
+            print('correct user')
+            if otp == request.session.get('otp'):
+                print("working")
+                auth_login(request, user)
+                del request.session['otp']
+                print("not working")
+                return redirect('home1')
+            else:
+                  
+                  send_otp(email, request.session['otp'])
+                  return render(request, 'login_with_otp.html', {'error_message': 'Invalid OTP. OTP has been resent.'})
+        else:
+            return render(request, 'login_with_otp.html', {'error_message': 'Invalid email'})
+
+    # if request is GET, generate and send OTP
+    else:
+        email = request.session.get('email')
+        if email:
+            otp = generate_otp()
+            send_otp(email, otp)
+            request.session['otp'] = otp
+            return render(request, 'login_with_otp.html', {'email': email})
+        else:
+            return redirect('login')
+
+def Home(request):
+    return render(request,"Home.html")
+from django.contrib.auth.forms import PasswordResetForm
+
+def reset_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        user = User.objects.filter(email=email).first()
+        if user:
+            form = PasswordResetForm({'email': email})
+            if form.is_valid():
+                # Generate token and uid for email confirmation
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                reset_link = request.build_absolute_uri(
+                    f'/reset/{uid}/{token}/'
+                )
+
+                # Send password reset email
+                subject = 'Password Reset'
+                message = render_to_string('reset_password_email.html', {
+                    'user': user,
+                    'reset_link': reset_link,
+                })
+                send_mail(subject, message, EMAIL_HOST_USER, [email], fail_silently=False)
+
+                # Additional logic for pattern field reset
+                custom_user = CUser.objects.get(user=user)
+                custom_user.pattern = None
+                custom_user.save()
+
+                messages.success(request, 'Password and pattern fields reset successfully. Please check your email for password reset instructions.')
+                return redirect('login')
+            else:
+                messages.error(request, 'Invalid input. Please try again.')
+        else:
+            messages.error(request, 'User not found.')
+    return render(request, 'reset_password.html')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

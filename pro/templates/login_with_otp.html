@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Login with OTP</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: rgb(5, 122, 162);
+      }
+      form {
+        margin: 0 auto;
+        padding: 20px;
+        background-color: rgb(92, 198, 234);
+        border-radius: 5px;
+        box-shadow: 0px 0px 10px #000;
+        max-width: 600px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 80vh;
+      }
+      h1 {
+        text-align: center;
+        text-transform: uppercase;
+        color: #fff;
+        margin-top: 0;
+      }
+      label {
+        display: block;
+        margin-bottom: 10px;
+        font-weight: bold;
+        color: #000;
+      }
+      input[type="submit"],
+      input[type="reset"] {
+        background-color: rgb(5, 122, 162);
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 150px;
+        margin-top: 10px;
+        transition: background-color 0.3s;
+      }
+      input[type="submit"]:hover,
+      input[type="reset"]:hover {
+        background-color: #3e8e41;
+      }
+      .error {
+        color: red;
+        margin-top: 5px;
+      }
+      .resend-otp {
+        text-align: center;
+        margin-top: 20px;
+      }
+      .resend-otp a {
+        color: #000;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Login with OTP</h1>
+    {% if error_message %}
+    <p style="color: red">{{ error_message }}</p>
+    {% endif %}
+    {% if email %}
+    <p>An OTP has been sent to {{ email }}. Please enter the OTP below:</p>
+    <form method="post">
+      {% csrf_token %}
+      <label for="otp">OTP:</label>
+      <input type="text" id="otp" name="otp" required>
+      <input type="submit" value="Login">
+      <div class="resend-otp">
+        <a href="{% url 'login_with_otp' %}">Resend OTP</a>
+      </div>
+    </form>
+    {% else %}
+    <p>Please enter your email address to receive an OTP:</p>
+    <form method="post">
+      {% csrf_token %}
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+      <input type="submit" value="Send OTP">
+    </form>
+    {% endif %}
+  </body>
+</html>

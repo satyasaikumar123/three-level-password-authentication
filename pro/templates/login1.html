@@ -1,118 +1,150 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-        }
-        form {
-            margin: 20px auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 0px 0px 10px #ccc;
-            max-width: 600px;
-        }
-        label {
-            display: block;
-            margin-bottom: 10px;
-            font-weight: bold;
-        }
-        input[type="submit"] {
-            background-color: #4CAF50;
-            color: #fff;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        input[type="submit"]:hover {
-            background-color: #3e8e41;
-        }
-        .error {
-            color: red;
-            margin-top: 5px;
-        }
-        .color-box {
-            display: inline-block;
-            width: 50px;
-            height: 50px;
-            margin-right: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        .color-box.selected {
-            border: 3px solid #000;
-        }
-        #pattern-input {
-            display: block;
-            width: 100%;
-            margin-top: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            box-sizing: border-box;
-            font-size: 16px;
-            background-color: #fff;
-        }
-    </style>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register 1</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			background-color: rgb(5, 122, 162);
+		}
+		form {
+			margin: 0 auto;
+			padding: 20px;
+			background-color: rgb(92, 198, 234);
+			border-radius: 5px;
+			box-shadow: 0px 0px 10px #000;
+			max-width: 600px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			height: 80vh; /* Decreased height */
+		}
+		h1 {
+			text-align: center;
+			text-transform: uppercase;
+			color: #fff;
+			margin-top: 0;
+		}
+		label {
+			display: block;
+			margin-bottom: 10px;
+			font-weight: bold;
+			color: #000;
+		}
+		input[type="submit"],
+		input[type="reset"] {
+			background-color: rgb(5, 122, 162);
+			color: #fff;
+			padding: 10px 20px;
+			border: none;
+			border-radius: 5px;
+			cursor: pointer;
+			width: 150px; /* Adjusted button width */
+			margin-top: 10px; /* Added margin-top */
+			transition: background-color 0.3s; /* Added transition effect */
+		}
+		input[type="submit"]:hover,
+		input[type="reset"]:hover {
+			background-color:rgb(97, 148, 243 );
+		}
+		.error {
+			color: red;
+			margin-top: 5px;
+		}
+		.color-box {
+			display: inline-block;
+			width: 80px;
+			height: 80px;
+			margin-right: 10px;
+			border-radius: 5px;
+			cursor: pointer;
+		}
+		.color-box.red {
+			background-color: red;
+		}
+		.color-box.yellow {
+			background-color: yellow;
+		}
+		.color-box.blue {
+			background-color: blue;
+			border: 1px solid #000;
+		}
+		.color-box.green {
+			background-color: green;
+		}
+		.color-box.selected {
+			border: 3px solid #000;
+		}
+		#pattern-input {
+			display: block;
+			width: 300px; /* Adjusted input box width */
+			margin-top: 10px;
+			padding: 10px;
+			border: 1px solid #333;
+			border-radius: 5px;
+			box-sizing: border-box;
+			font-size: 16px;
+			background-color: #fff;
+		}
+	</style>
 </head>
 <body>
-    <form method="POST">
-        {% csrf_token %}
-        <label for="pattern">Color Pattern:</label>
-        <div id="color-boxes">
-            <div class="color-box red"></div>
-            <div class="color-box yellow"></div>
-            <div class="color-box blue"></div>
-            <div class="color-box green"></div>
-        </div>
-        <input type="text" id="pattern-input" name="pattern" required>
-        {% if messages %}
-            {% for message in messages %}
-                <p class="{{ message.tags }}">{{ message }}</p>
-                {% if message.tags == 'error' %}
-                    <script>
-                        document.getElementById("color-boxes").classList.add("error");
-                    </script>
-                {% endif %}
-            {% endfor %}
-        {% endif %}
-        <input type="submit" value="Login">
-        <input type="reset" value="Reset">
-      </form>
-      <script>
-          const colorBoxes = document.querySelectorAll('.color-box');
-  const patternInput = document.querySelector('#pattern-input');
+	<form method="POST">
+		{% csrf_token %}
+		<h1>Color-based Authentication</h1>
+		<label for="pattern">Pattern (select exactly 4 colors):</label>
+		<div id="color-boxes">
+			<div class="color-box red"></div>
+			<div class="color-box yellow"></div>
+			<div class="color-box blue"></div>
+			<div class="color-box green"></div>
+		</div>
+		<input type="text" id="pattern-input" name="pattern" required>
+		{% if messages %}
+			{% for message in messages %}
+				<p class="{{ message.tags }}">{{ message }}</p>
+				{% if message.tags == 'error' %}
+					<script>
+						document.getElementById("color-boxes").classList.add("error");
+					</script>
+				{% endif %}
+			{% endfor %}
+		{% endif %}
+		<input type="submit" value="login">
+		<input type="reset" value="Reset">
+	</form>
+	<script>
+		const colorBoxes = document.querySelectorAll('.color-box');
+		const patternInput = document.querySelector('#pattern-input');
 
-  let selectedColors = [];
+		let selectedColors = [];
 
-  colorBoxes.forEach(box => {
-    box.addEventListener('click', () => {
-      const color = box.classList[1];
-      if (selectedColors.includes(color)) {
-        box.classList.remove('selected');
-        selectedColors = selectedColors.filter(c => c !== color);
-      } else if (selectedColors.length < 4) {
-        box.classList.add('selected');
-        selectedColors.push(color);
-      } else {
-        alert("You've already selected 4 colors. Please submit or reset.");
-      }
-      patternInput.value = selectedColors.join(',');
-    });
+	colorBoxes.forEach(box => {
+		box.style.backgroundColor = box.classList[1];
+	  box.addEventListener('click', () => {
+	    const color = box.classList[1];
+	    if (selectedColors.includes(color)) {
+	      box.classList.remove('selected');
+	      selectedColors = selectedColors.filter(c => c !== color);
+	    } else if (selectedColors.length < 4) {
+	      box.classList.add('selected');
+	      selectedColors.push(color);
+	    } else {
+	      alert("You've already selected 4 colors. Please submit or reset.");
+	    }
+          patternInput.value = selectedColors.join(',');
   });
-        const loginForm = document.querySelector('form');
-      loginForm.addEventListener('submit', event => {
-    event.preventDefault();
-    const pattern = patternInput.value;
-    // Here, you can check if the pattern matches the expected value and handle the login logic
-    console.log('Submitted pattern:', pattern);
-  });
+});
 </script>
 </body>
 </html>
+
+
+
+
+
+
+		    
